@@ -6,7 +6,9 @@ import os
 app = Flask(__name__)
 
 # Load your pickle model
-model_path = os.path.join("model", "model (2).pkl")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+model_path = os.path.join(BASE_DIR, "model", "model (2).pkl")
 with open(model_path, "rb") as f:
     model = pickle.load(f)
 
