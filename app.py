@@ -34,7 +34,8 @@ def predict():
         vr = float(data["vr"])
 
         X = np.array([[age, gender, race, qrs, qt, vr]])
-        lvef = round(float(model.predict(X)[0]), 2)
+        # lvef = round(float(model.predict(X)[0]), 2)
+        lvef = 0
 
         status = (
             "Normal" if lvef >= 55 else
