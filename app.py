@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "model (2).pkl")
 
 with open(model_path, "rb") as f:
-    model = pickle.load(f)
+    model_data = pickle.load(f)
     
 weights = model_data["weights"]
 biases = model_data["biases"]
