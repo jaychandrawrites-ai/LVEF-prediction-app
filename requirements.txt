@@ -1,4 +1,6 @@
 flask
+gunicorn
 numpy
 scikit-learn
-gunicorn
+scipy
+python-docx
