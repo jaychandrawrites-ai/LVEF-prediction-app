@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template_string
 import pickle
 import numpy as np
 import os
+from docx import Document
 
 # Optional but recommended
 from docx import Document
