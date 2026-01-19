@@ -4,8 +4,6 @@ import numpy as np
 import os
 from docx import Document
 
-# Optional but recommended
-from docx import Document
 
 app = Flask(__name__)
 
@@ -22,12 +20,30 @@ with open(model_path, "rb") as f:
 # Load article (DOCX)
 # -------------------------
 def load_article():
-    docx_path = os.path.join(BASE_DIR, "Jay 2025 science fair Narrative school.docx")
-    if not os.path.exists(docx_path):
-        return "<i>Research article file not found.</i>"
+    path = os.path.join(
+        BASE_DIR,
+        "Jay 2025 science fair Narrative school.docx"
+    )
 
-    doc = Document(docx_path)
-    paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+    if not os.path.exists(path):
+        return """
+        <h3>Research Article</h3>
+        <p>
+            The full research article will appear here once uploaded.
+        </p>
+        <p>
+            This project investigates the use of machine learning to estimate
+            left ventricular ejection fraction (LVEF) from ECG-derived parameters.
+        </p>
+        """
+
+    doc = Document(path)
+
+    paragraphs = []
+    for p in doc.paragraphs:
+        if p.text.strip():
+            paragraphs.append(p.text.strip())
+
     return "<br><br>".join(paragraphs)
 
 # -------------------------
