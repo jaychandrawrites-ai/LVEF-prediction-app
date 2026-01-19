@@ -3,6 +3,9 @@ import pickle
 import numpy as np
 import os
 
+# Optional but recommended
+from docx import Document
+
 app = Flask(__name__)
 
 # -------------------------
@@ -15,16 +18,29 @@ with open(model_path, "rb") as f:
     model = pickle.load(f)
 
 # -------------------------
+# Load article (DOCX)
+# -------------------------
+def load_article():
+    docx_path = os.path.join(BASE_DIR, "Jay 2025 science fair Narrative school.docx")
+    if not os.path.exists(docx_path):
+        return "<i>Research article file not found.</i>"
+
+    doc = Document(docx_path)
+    paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+    return "<br><br>".join(paragraphs)
+
+# -------------------------
 # Routes
 # -------------------------
 @app.route("/")
 def home():
-    return render_template_string(HTML)
+    article_html = load_article()
+    return render_template_string(HTML, article=article_html)
 
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
-        data = request.json
+        data = request.get_json(force=True)
 
         age = float(data["age"])
         gender = 0 if data["gender"] == "male" else 1
@@ -71,15 +87,11 @@ nav {
     padding: 20px 60px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
     background: white;
     box-shadow: 0 1px 10px rgba(0,0,0,0.05);
 }
 
-nav b {
-    font-size: 1.2em;
-}
-
+nav b { font-size: 1.2em; }
 nav a {
     margin-left: 30px;
     text-decoration: none;
@@ -93,25 +105,10 @@ nav a {
     color: white;
 }
 
-.hero h1 {
-    font-size: 3em;
-    margin-bottom: 10px;
-}
-
-.hero p {
-    font-size: 1.2em;
-    max-width: 600px;
-}
-
 .section {
     padding: 80px 60px;
     max-width: 1100px;
     margin: auto;
-}
-
-.section h2 {
-    font-size: 2em;
-    margin-bottom: 20px;
 }
 
 .cards {
@@ -180,6 +177,17 @@ button {
     font-weight: 800;
 }
 
+.article-box {
+    background: white;
+    padding: 50px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+    line-height: 1.8;
+    font-size: 1.05em;
+    max-height: 700px;
+    overflow-y: auto;
+}
+
 footer {
     padding: 40px;
     text-align: center;
@@ -203,25 +211,25 @@ footer {
 <section class="hero">
     <h1>AI-Powered LVEF Estimation</h1>
     <p>
-        Instantly estimate left ventricular ejection fraction from ECG-derived
-        parameters using machine learning trained on large clinical datasets.
+        Estimate left ventricular ejection fraction from ECG-derived
+        parameters using machine learning.
     </p>
 </section>
 
 <section id="product" class="section">
     <h2>Why LVEF.ai?</h2>
     <div class="cards">
-        <div class="card">⚡ Real-time inference from ECG data</div>
-        <div class="card">🧠 Machine learning trained on 90,000+ patients</div>
-        <div class="card">🏥 Potential to reduce echocardiography burden</div>
-        <div class="card">🔬 Built for clinical decision support research</div>
+        <div class="card">⚡ Real-time ECG-based inference</div>
+        <div class="card">🧠 ML trained on large clinical datasets</div>
+        <div class="card">🏥 Potential to reduce echo costs</div>
+        <div class="card">🔬 Built as a research-grade prototype</div>
     </div>
 </section>
 
 <section id="demo" class="section">
     <h2>Interactive Demo</h2>
-
     <div class="demo">
+
         <label>Age</label>
         <input id="age" type="number" value="55">
 
@@ -255,19 +263,21 @@ footer {
                 <div class="value" id="lvef">--%</div>
             </div>
             <div id="status"></div>
+            <div id="error" style="color:red;"></div>
         </div>
+
     </div>
 </section>
 
 <section id="research" class="section">
-    <h2>Research & Documentation</h2>
-    <p>
-        This project was developed as a science fair research initiative exploring
-        the use of artificial intelligence for cardiac function estimation.
-    </p>
-    <p>
+    <h2>Research Article</h2>
+    <div class="article-box">
+        {{ article | safe }}
+    </div>
+
+    <p style="margin-top:20px;">
         📄 <a href="/static/LVEF_Narrative.pdf" target="_blank">
-        Read the full research narrative (PDF)</a>
+        Download full PDF version</a>
     </p>
 </section>
 
@@ -278,12 +288,12 @@ footer {
 <script>
 async function predict() {
     const data = {
-        age: age.value,
-        gender: gender.value,
-        race: race.value,
-        qrs: qrs.value,
-        qt: qt.value,
-        vr: vr.value
+        age: document.getElementById("age").value,
+        gender: document.getElementById("gender").value,
+        race: document.getElementById("race").value,
+        qrs: document.getElementById("qrs").value,
+        qt: document.getElementById("qt").value,
+        vr: document.getElementById("vr").value
     };
 
     const res = await fetch("/predict", {
@@ -294,12 +304,15 @@ async function predict() {
 
     const out = await res.json();
 
-    if (out.lvef) {
-        lvef.innerText = out.lvef + "%";
-        status.innerText = out.status;
-        circle.style.background =
-            `conic-gradient(#667eea ${out.lvef * 3.6}deg, #eee 0deg)`;
+    if (out.error) {
+        document.getElementById("error").innerText = out.error;
+        return;
     }
+
+    document.getElementById("lvef").innerText = out.lvef + "%";
+    document.getElementById("status").innerText = out.status;
+    document.getElementById("circle").style.background =
+        `conic-gradient(#667eea ${out.lvef * 3.6}deg, #eee 0deg)`;
 }
 </script>
 
@@ -307,5 +320,9 @@ async function predict() {
 </html>
 """
 
+# -------------------------
+# Run (Render-compatible)
+# -------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
