@@ -15,6 +15,26 @@ model_path = os.path.join(BASE_DIR, "model (2).pkl")
 
 with open(model_path, "rb") as f:
     model = pickle.load(f)
+    
+weights = model_data["weights"]
+biases = model_data["biases"]
+X_mean = model_data["X_mean"]
+X_std = model_data["X_std"]
+Y_mean = model_data["Y_mean"]
+Y_std = model_data["Y_std"]
+
+def relu(x):
+    return np.maximum(0, x)
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def forward(X):
+    a = X
+    for i in range(len(weights) - 1):
+        a = relu(a @ weights[i].T + biases[i])
+    out = sigmoid(a @ weights[-1].T + biases[-1])
+    return out
 
 # -------------------------
 # Load article (DOCX)
@@ -67,7 +87,16 @@ def predict():
         vr = float(data["vr"])
 
         X = np.array([[age, gender, race, qrs, qt, vr]])
-        lvef = round(float(model.predict(X)[0]), 2)
+        # Normalize input
+        Xn = (X - X_mean) / X_std
+
+        # Forward pass
+        pred_norm = forward(Xn)
+
+        # De-normalize output
+        lvef = float(pred_norm[0, 0] * Y_std + Y_mean)
+        lvef = round(lvef, 2)
+
 
         status = (
             "Normal" if lvef >= 55 else
